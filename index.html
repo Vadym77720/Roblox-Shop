@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roblox Shop — демо (без реальных продаж)</title>
+  <style>
+    :root{
+      --bg:#0b0f14; /* тёмный фон */
+      --card:#121823;
+      --muted:#9aa3b2;
+      --text:#e8eef7;
+      --accent:#ff3b3b; /* неон‑красный */
+      --accent-2:#3bf5ff; /* бирюза для меток */
+      --ok:#37d67a;
+      --warn:#ffd166;
+      --radius:18px;
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0; background: radial-gradient(1000px 400px at 75% -100px, rgba(59,245,255,.08), transparent), linear-gradient(180deg,#0b0f14,#0b0f14 65%, #0b0f14);
+      color:var(--text); font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, Noto Sans, sans-serif;
+    }
+    a{color:inherit; text-decoration:none}
+    .container{max-width:1100px; margin:0 auto; padding:24px}
+
+    /* Header */
+    header{
+      position:sticky; top:0; z-index:20; backdrop-filter:saturate(120%) blur(8px);
+      background:rgba(11,15,20,.7); border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .nav{display:flex; align-items:center; gap:14px; padding:16px 24px}
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.3px}
+    .brand .dot{width:12px; height:12px; background:var(--accent); border-radius:50%; box-shadow:0 0 20px var(--accent)}
+    .navlinks{display:flex; gap:10px; flex-wrap:wrap}
+    .navlinks a{padding:10px 14px; border-radius:12px; color:var(--text); opacity:.85}
+    .navlinks a.active, .navlinks a:hover{background:rgba(255,255,255,.06); opacity:1}
+    .cartpill{margin-left:auto; display:flex; align-items:center; gap:8px; background:rgba(255,59,59,.12); border:1px solid rgba(255,59,59,.35); padding:8px 12px; border-radius:999px}
+    .badge{min-width:22px; height:22px; display:grid; place-items:center; background:var(--accent); color:white; border-radius:999px; font-weight:700}
+
+    .note{
+      margin:16px 0 8px; padding:14px 16px; border-radius:12px; background:rgba(255,209,102,.08); border:1px dashed rgba(255,209,102,.5); color:#ffe7a6
+    }
+
+    /* Layout helpers */
+    .grid{display:grid; gap:16px}
+    .grid.cards{grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));}
+    .row{display:grid; grid-template-columns: 1.2fr .8fr; gap:20px}
+    @media (max-width: 880px){ .row{grid-template-columns:1fr;}}
+
+    /* Cards */
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.08); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px}
+    .card h3{margin:.2rem 0 .4rem; font-size:1.1rem}
+    .muted{color:var(--muted)}
+    .price{font-weight:800; font-size:1.2rem}
+    .strike{opacity:.7; text-decoration:line-through}
+
+    /* Buttons */
+    .btn{cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.04); color:var(--text)}
+    .btn.primary{background:linear-gradient(180deg, #ff6464, #ff3b3b); border-color:#ff3b3b; color:#fff; font-weight:800}
+    .btn.ghost{background:transparent}
+    .btn.small{padding:6px 10px; border-radius:10px; font-size:.9rem}
+    .btn:disabled{opacity:.5; cursor:not-allowed}
+
+    /* Inputs */
+    .field{display:flex; flex-direction:column; gap:6px}
+    .field input[type="number"], .field input[type="text"]{
+      width:100%; background:#0e141c; border:1px solid rgba(255,255,255,.12); color:var(--text); padding:10px 12px; border-radius:12px;
+    }
+    input[type="range"]{ -webkit-appearance:none; width:100%; height:10px; background:rgba(255,255,255,.1); border-radius:999px; outline:none }
+    input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 6px rgba(255,59,59,.25); cursor:pointer }
+    .pillbar{display:flex; flex-wrap:wrap; gap:8px}
+
+    /* Cart */
+    .cart{position:sticky; top:84px}
+    table{width:100%; border-collapse:collapse}
+    th, td{padding:10px; text-align:left; border-bottom:1px solid rgba(255,255,255,.08)}
+    tfoot td{font-weight:800}
+
+    footer{margin:40px 0 80px; color:var(--muted); font-size:.95rem}
+    .chip{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04); font-size:.85rem}
+
+    .label{font-size:.8rem; color:#a7fffb; letter-spacing:.35px; text-transform:uppercase}
+
+    /* Hidden/route */
+    section[data-route]{display:none}
+    section[data-route].show{display:block}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand"><span class="dot"></span> <span>Roblox Shop — демо</span></div>
+      <nav class="navlinks" id="nav">
+        <a href="#robux" data-goto="robux" class="active">Калькулятор Robux (демо)</a>
+        <a href="#cards" data-goto="cards">Гифткарты</a>
+        <a href="#pets" data-goto="pets">Петы (демо)</a>
+        <a href="#perks" data-goto="perks">Преимущества (демо)</a>
+        <a href="#pay" data-goto="pay">Оплата / Связь</a>
+      </nav>
+      <div class="cartpill">
+        <span>Корзина</span>
+        <span class="badge" id="cartCount">0</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="note">
+      <strong>Важно:</strong> это обучающий демо‑сайт. <u>Реальные продажи Robux, петов и игровых предметов за деньги вне Roblox запрещены правилами платформы</u>, а прямые платежи не подключены. Никакие платежи здесь не обрабатываются.
+    </div>
+
+    <!-- ROBUX CALCULATOR -->
+    <section data-route="robux" class="show">
+      <div class="row">
+        <div class="card">
+          <div class="chip">Фиксированная цена: 800 Robux = <b>12 €</b> (линейная шкала)</div>
+          <h2 style="margin:.6rem 0 1rem">Калькулятор Robux (демо)</h2>
+          <div class="grid" style="grid-template-columns:1fr 1fr; gap:18px">
+            <div class="field">
+              <label class="label">Количество Robux</label>
+              <input type="range" id="rbxRange" min="0" max="8000" step="1" value="800" />
+              <div class="pillbar" id="presetBar"></div>
+            </div>
+            <div class="field">
+              <label class="label">Точное значение</label>
+              <input type="number" id="rbxInput" min="0" max="8000" step="1" value="800" />
+            </div>
+          </div>
+
+          <div class="grid" style="grid-template-columns:1fr 1fr; gap:18px; margin-top:10px">
+            <div class="card">
+              <div class="muted">Цена (EUR)</div>
+              <div class="price" id="priceEur">12.00 €</div>
+              <div class="muted" style="font-size:.9rem">Формула: <code>Robux × 0.015 €</code></div>
+            </div>
+            <div class="card">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px">
+                <span class="muted">Курс EUR→UAH</span>
+                <input style="width:120px" type="number" id="rateUAH" value="45" step="0.1" />
+              </div>
+              <div class="price" id="priceUah">540.00 ₴</div>
+              <div class="muted" style="font-size:.9rem">Справочно, курс настраивается вручную.</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; margin-top:14px">
+            <button class="btn primary" id="addRobuxBtn">Добавить в корзину (демо)</button>
+            <button class="btn ghost" data-goto="pay">Перейти к оплате (демо)</button>
+          </div>
+        </div>
+
+        <aside class="cart">
+          <div class="card">
+            <h3>Корзина (демо)</h3>
+            <div id="cartEmpty" class="muted">Здесь появятся ваши товары.</div>
+            <div id="cartTableWrap" style="display:none">
+              <table>
+                <thead>
+                  <tr><th>Товар</th><th>К-во</th><th>Цена</th><th></th></tr>
+                </thead>
+                <tbody id="cartBody"></tbody>
+                <tfoot>
+                  <tr><td colspan="2">Итого</td><td id="cartTotal">0.00 €</td><td></td></tr>
+                </tfoot>
+              </table>
+              <div style="display:flex; gap:8px; margin-top:10px">
+                <button class="btn" id="clearCart">Очистить</button>
+                <button class="btn primary" data-goto="pay">Оплатить (демо)</button>
+                <button class="btn" id="exportCart">Экспорт корзины (JSON)</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <footer>
+        <span class="chip">Дисклеймер: демо‑магазин • нет реальных продаж</span>
+        <span class="chip">Roblox® — торговая марка Roblox Corporation • не аффилировано</span>
+      </footer>
+    </section>
+
+    <!-- GIFT CARDS -->
+    <section data-route="cards">
+      <h2>Гифткарты</h2>
+      <div class="note">Пример карточки товара. В реальном мире покупайте Robux только <em>официально</em> (подарочные карты, roblox.com и др.).</div>
+      <div class="grid cards" id="cardsGrid"></div>
+    </section>
+
+    <!-- PETS (DEMO) -->
+    <section data-route="pets">
+      <h2>Петы (демо‑каталог)</h2>
+      <div class="note">Продажа петов за реальные деньги вне Roblox запрещена правилами. Ниже — <u>макет</u> каталога для обучения.</div>
+      <div class="grid cards" id="petsGrid"></div>
+    </section>
+
+    <!-- PERKS (DEMO) -->
+    <section data-route="perks">
+      <h2>Преимущества / перки (демо)</h2>
+      <div class="note">Реальные перки продавайте только через официальные механики (game pass / developer products) в самом Roblox. Здесь — макет.</div>
+      <div class="grid cards" id="perksGrid"></div>
+    </section>
+
+    <!-- PAYMENT / CONTACT -->
+    <section data-route="pay">
+      <h2>Оплата / Связь</h2>
+      <div class="note">
+        Для завершения заказа <b>обязательно</b> добавьте в Telegram и напишите: <a href="https://t.me/WrCheloviy" target="_blank" class="chip">@WrCheloviy</a>.
+      </div>
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <div class="card">
+          <h3>Связь через Telegram</h3>
+          <p>Ник для связи: <a href="https://t.me/WrCheloviy" target="_blank">@WrCheloviy</a></p>
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <a class="btn primary" href="https://t.me/WrCheloviy" target="_blank">Открыть Telegram</a>
+            <button class="btn" id="copyTG">Скопировать ник</button>
+          </div>
+          <p class="muted" style="margin-top:10px">После добавления отправьте скрин заказа из правого блока.</p>
+        </div>
+        <div class="card">
+          <h3>Ваш заказ</h3>
+          <div id="orderSummary" class="muted">Корзина пуста.</div>
+          <div style="display:flex; gap:8px; margin-top:10px">
+            <button class="btn" id="copySummary">Скопировать заказ</button>
+            <button class="btn" id="downloadSummary">Скачать заказ (.txt)</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ====== ДАННЫЕ ======
+    const RATE_EUR_PER_RBX = 12/800; // 0.015 €/Robux — как вы просили
+    const PRESETS = [25, 50, 100, 200, 400, 800];
+
+    const giftCards = [
+      { id:'gplay15', name:'Google Play €15', price:12, original:15, desc:'Скидка 12/15 (пример). Код доставки по e‑mail.', tag:'-20%' },
+    ];
+
+    const pets = [
+      { id:'racoon', name:'Енот', price:12 },
+      { id:'fennec', name:'Фенек', price:10 },
+      { id:'dragonfly', name:'Стрекоза', price:9 },
+      { id:'trex', name:'Тирекс', price:7 },
+      { id:'kitsune', name:'Кицуне', price:37 },
+      { id:'lobster', name:'Лобстер', price:7 },
+      { id:'fox', name:'Лис', price:2 },
+      { id:'pet50', name:'Петы 50 lvl', price:1.5 },
+      { id:'pet60', name:'Петы 60 lvl', price:2 },
+      { id:'pet75', name:'Петы 75 lvl', price:3 },
+    ];
+
+    const perks = [
+      { id:'vip', name:'Випка', price:8 },
+      { id:'tag', name:'Тег игрока', price:3 },
+      { id:'glass', name:'Разоблачение стекла', price:8 },
+      { id:'case1', name:'1 кейс', price:2.5 },
+      { id:'push', name:'Толчок', price:3.5 },
+      { id:'speed5', name:'Апгрейд скорости до 5 уровня', price:15 },
+      { id:'case10', name:'10 кейсов', price:23.99 },
+    ];
+
+    // ====== НАВИГАЦИЯ ======
+    const sections = document.querySelectorAll('section[data-route]');
+    const nav = document.getElementById('nav');
+    function showRoute(route){
+      sections.forEach(s=>s.classList.toggle('show', s.getAttribute('data-route')===route));
+      nav.querySelectorAll('a').forEach(a=>a.classList.toggle('active', a.dataset.goto===route));
+      if(route==='pay') renderOrderSummary();
+      history.replaceState(null, '', `#${route}`);
+    }
+    nav.addEventListener('click', (e)=>{
+      const link = e.target.closest('a[data-goto]');
+      if(!link) return;
+      e.preventDefault();
+      showRoute(link.dataset.goto);
+    });
+    document.querySelectorAll('[data-goto]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{ showRoute(btn.dataset.goto); });
+    });
+    window.addEventListener('load', ()=>{
+      const hash = (location.hash||'').replace('#','');
+      if(hash) showRoute(hash);
+    });
+
+    // ====== КАЛЬКУЛЯТОР ROBUX ======
+    const rbxRange = document.getElementById('rbxRange');
+    const rbxInput = document.getElementById('rbxInput');
+    const priceEurEl = document.getElementById('priceEur');
+    const priceUahEl = document.getElementById('priceUah');
+    const rateUAH = document.getElementById('rateUAH');
+
+    function syncFrom(val){
+      const v = Math.min(8000, Math.max(0, Number(val)||0));
+      rbxRange.value = v; rbxInput.value = v; updatePrices();
+    }
+    function updatePrices(){
+      const v = Number(rbxRange.value);
+      const price = v * RATE_EUR_PER_RBX;
+      priceEurEl.textContent = `${price.toFixed(2)} €`;
+      const uah = price * Number(rateUAH.value||0);
+      priceUahEl.textContent = `${uah.toFixed(2)} ₴`;
+    }
+    rbxRange.addEventListener('input', e=> syncFrom(e.target.value));
+    rbxInput.addEventListener('input', e=> syncFrom(e.target.value));
+    rateUAH.addEventListener('input', updatePrices);
+
+    // Пресеты
+    const presetBar = document.getElementById('presetBar');
+    PRESETS.forEach(n=>{
+      const b = document.createElement('button');
+      b.className = 'btn small';
+      b.textContent = `${n}`;
+      b.addEventListener('click', ()=> syncFrom(n));
+      presetBar.appendChild(b);
+    });
+    syncFrom(800);
+
+    // ====== КАТАЛОГИ ======
+    function renderCard(el, item, type){
+      const card = document.createElement('div');
+      card.className = 'card';
+      const priceHTML = (item.original)
+        ? `<span class="strike">${item.original.toFixed ? item.original.toFixed(2) : item.original} €</span> <span class="price">${item.price.toFixed(2)} €</span>`
+        : `<span class="price">${item.price.toFixed(2)} €</span>`;
+      card.innerHTML = `
+        <div class="muted" style="margin-bottom:6px">${type}</div>
+        <h3>${item.name}</h3>
+        <div style="display:flex; align-items:center; gap:10px; margin:.4rem 0 .6rem">${priceHTML}
+          ${item.tag?`<span class="chip" style="border-color:rgba(59,245,255,.4); color:var(--accent-2)">${item.tag}</span>`:''}
+        </div>
+        <div style="display:flex; gap:8px">
+          <button class="btn primary">В корзину</button>
+          <button class="btn">Подробнее</button>
+        </div>`;
+      card.querySelector('.btn.primary').addEventListener('click', ()=>{
+        addToCart({ id:item.id, name:item.name, price:item.price, qty:1 });
+      });
+      el.appendChild(card);
+    }
+
+    const cardsGrid = document.getElementById('cardsGrid');
+    giftCards.forEach(i=>renderCard(cardsGrid, i, 'Гифт‑карта'));
+
+    const petsGrid = document.getElementById('petsGrid');
+    pets.forEach(i=>renderCard(petsGrid, i, 'Петы (демо)'));
+
+    const perksGrid = document.getElementById('perksGrid');
+    perks.forEach(i=>renderCard(perksGrid, i, 'Перк (демо)'));
+
+    // ====== КОРЗИНА ======
+    const addRobuxBtn = document.getElementById('addRobuxBtn');
+    addRobuxBtn.addEventListener('click', ()=>{
+      const amount = Number(rbxRange.value);
+      if(amount<=0) return;
+      const price = amount * RATE_EUR_PER_RBX;
+      addToCart({ id:`robux-${amount}`, name:`Robux (демо) — ${amount} шт`, price: Number(price.toFixed(2)), qty:1 });
+    });
+
+    const cart = JSON.parse(localStorage.getItem('cart-demo')||'[]');
+    const cartCount = document.getElementById('cartCount');
+    const cartBody = document.getElementById('cartBody');
+    const cartTotal = document.getElementById('cartTotal');
+    const cartEmpty = document.getElementById('cartEmpty');
+    const cartTableWrap = document.getElementById('cartTableWrap');
+
+    function saveCart(){ localStorage.setItem('cart-demo', JSON.stringify(cart)); }
+
+    function addToCart(item){
+      const found = cart.find(x=>x.id===item.id);
+      if(found) found.qty += item.qty; else cart.push({...item});
+      renderCart();
+    }
+
+    function removeFromCart(id){
+      const idx = cart.findIndex(x=>x.id===id);
+      if(idx>-1){ cart.splice(idx,1); renderCart(); }
+    }
+
+    function setQty(id, qty){
+      const it = cart.find(x=>x.id===id);
+      if(it){ it.qty = Math.max(1, Number(qty)||1); renderCart(); }
+    }
+
+    function renderCart(){
+      saveCart();
+      cartCount.textContent = cart.reduce((s,x)=>s+x.qty,0);
+      cartBody.innerHTML = '';
+      let total = 0;
+      cart.forEach(x=>{
+        total += x.price * x.qty;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${x.name}</td>
+          <td><input type="number" min="1" value="${x.qty}" style="width:80px"/></td>
+          <td>${(x.price*x.qty).toFixed(2)} €</td>
+          <td><button class="btn small">✕</button></td>`;
+        tr.querySelector('input').addEventListener('input', e=> setQty(x.id, e.target.value));
+        tr.querySelector('button').addEventListener('click', ()=> removeFromCart(x.id));
+        cartBody.appendChild(tr);
+      });
+      cartTotal.textContent = `${total.toFixed(2)} €`;
+      const has = cart.length>0;
+      cartEmpty.style.display = has? 'none':'block';
+      cartTableWrap.style.display = has? 'block':'none';
+    }
+
+    document.getElementById('clearCart').addEventListener('click', ()=>{ cart.length=0; renderCart(); });
+    document.getElementById('exportCart').addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(cart, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'cart-demo.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    function renderOrderSummary(){
+      const box = document.getElementById('orderSummary');
+      if(cart.length===0){ box.textContent='Корзина пуста.'; return; }
+      const lines = cart.map(x=>`• ${x.name} × ${x.qty} = ${(x.price*x.qty).toFixed(2)} €`);
+      const total = cart.reduce((s,x)=>s+x.price*x.qty,0);
+      box.innerHTML = `<div class="muted">Итог: <b>${total.toFixed(2)} €</b></div><pre style="white-space:pre-wrap; background:#0e141c; padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,.08);">${lines.join('\n')}</pre>`;
+    }
+
+    document.getElementById('copySummary').addEventListener('click', async ()=>{
+      const txt = buildSummaryText();
+      try{ await navigator.clipboard.writeText(txt); alert('Скопировано в буфер.'); }catch(e){ alert('Не удалось скопировать.'); }
+    });
+    document.getElementById('downloadSummary').addEventListener('click', ()=>{
+      const blob = new Blob([buildSummaryText()], {type:'text/plain'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'order-demo.txt'; a.click(); URL.revokeObjectURL(a.href);
+    });
+    function buildSummaryText(){
+      if(cart.length===0) return 'Корзина пуста.';
+      const lines = cart.map(x=>`• ${x.name} × ${x.qty} = ${(x.price*x.qty).toFixed(2)} €`);
+      const total = cart.reduce((s,x)=>s+x.price*x.qty,0);
+      return `Демо‑заказ (без оплаты)\n${lines.join('\n')}\nИтого: ${total.toFixed(2)} €`;
+    }
+
+    // Кнопка: скопировать ник Telegram
+    (function(){
+      const btn = document.getElementById('copyTG');
+      if(btn){
+        btn.addEventListener('click', async ()=>{
+          try{ await navigator.clipboard.writeText('@WrCheloviy'); alert('Ник скопирован: @WrCheloviy'); }
+          catch(e){ alert('Не удалось скопировать.'); }
+        });
+      }
+    })();
+
+    renderCart();
+  </script>
+</body>
+</html>
